@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Comic Sans MS', cursive;
+            background: linear-gradient(45deg, #ffd1dc, #ffe4e1, #fff0f5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .number {
+            position: absolute;
+            font-size: 24px;
+            color: #ff9eaa;
+            opacity: 0.6;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+            }
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(255, 182, 193, 0.3);
+            z-index: 1;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .title {
+            text-align: center;
+            color: #ff69b4;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .problem {
+            text-align: center;
+            font-size: 2rem;
+            margin: 1rem 0;
+            color: #db7093;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .option {
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 182, 193, 0.8);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .option:hover {
+            transform: scale(1.05);
+            background: rgba(255, 105, 180, 0.8);
+        }
+
+        .score {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #c71585;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .feedback {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            min-height: 1.5em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+
+        .correct {
+            color: #ff69b4; /* Cambiado a un rosa que combina con el tema */
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .incorrect {
+            color: #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 1rem;
+            }
+            .title {
+                font-size: 1.5rem;
+            }
+            .problem {
+                font-size: 1.8rem;
+            }
+            .option {
+                font-size: 1rem;
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background" id="background"></div>
+    <div class="game-container">
+        <h1 class="title">¡Juego de Multiplicar! 🎮</h1>
+        <div class="problem" id="problem">6 × 7 = ?</div>
+        <div class="options" id="options">
+            <button class="option">42</button>
+            <button class="option">35</button>
+            <button class="option">49</button>
+            <button class="option">36</button>
+        </div>
+        <div class="score">Puntuación: <span id="score">0</span></div>
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        let score = 0;
+        let currentProblem = {};
+
+        function createFloatingNumber() {
+            const number = document.createElement('div');
+            number.className = 'number';
+            number.style.left = Math.random() * 100 + 'vw';
+            number.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            number.textContent = Math.floor(Math.random() * 9) + 1;
+            document.getElementById('background').appendChild(number);
+
+            number.addEventListener('animationend', () => {
+                number.remove();
+            });
+        }
+
+        setInterval(createFloatingNumber, 1000);
+
+        function generateProblem() {
+            const num1 = Math.floor(Math.random() * 9) + 2;
+            const num2 = Math.floor(Math.random() * 9) + 2;
+            const correct = num1 * num2;
+            
+            const answers = [correct];
+            while (answers.length < 4) {
+                const wrong = (Math.floor(Math.random() * 9) + 2) * (Math.floor(Math.random() * 9) + 2);
+                if (!answers.includes(wrong)) {
+                    answers.push(wrong);
+                }
+            }
+
+            currentProblem = {
+                question: `${num1} × ${num2} = ?`,
+                correct: correct,
+                answers: shuffleArray(answers)
+            };
+
+            document.getElementById('problem').textContent = currentProblem.question;
+            const options = document.getElementById('options').children;
+            for (let i = 0; i < options.length; i++) {
+                options[i].textContent = currentProblem.answers[i];
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function checkAnswer(selected) {
+            const feedback = document.getElementById('feedback');
+            if (parseInt(selected) === currentProblem.correct) {
+                score++;
+                feedback.textContent = '¡Correcto! 🎉';
+                feedback.className = 'feedback correct';
+            } else {
+                feedback.textContent = '¡Inténtalo de nuevo! 💪';
+                feedback.className = 'feedback incorrect';
+            }
+            document.getElementById('score').textContent = score;
+            
+            setTimeout(() => {
+                feedback.textContent = '';
+                generateProblem();
+            }, 1500);
+        }
+
+        document.getElementById('options').addEventListener('click', (e) => {
+            if (e.target.classList.contains('option')) {
+                checkAnswer(e.target.textContent);
+            }
+        });
+
+        generateProblem();
+    </script>
+</body>
+</html>
