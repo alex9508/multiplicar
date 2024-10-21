@@ -38,6 +38,69 @@
             animation: float 20s linear infinite;
         }
 
+        .firework {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: explode 1s ease-out forwards;
+            z-index: 2;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(30);
+                opacity: 0;
+            }
+        }
+
+        .victory-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 3;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .victory-message {
+            font-size: 3rem;
+            color: #ff69b4;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .play-again {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            background: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .play-again:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         @keyframes float {
             0% {
                 transform: translateY(100vh) rotate(0deg);
@@ -115,7 +178,7 @@
         }
 
         .correct {
-            color: #ff69b4; /* Cambiado a un rosa que combina con el tema */
+            color: #ff69b4;
             animation: pulse 0.5s ease-in-out;
         }
 
@@ -143,6 +206,10 @@
                 font-size: 1rem;
                 padding: 0.8rem;
             }
+            .victory-message {
+                font-size: 2rem;
+                padding: 0 1rem;
+            }
         }
     </style>
 </head>
@@ -161,9 +228,48 @@
         <div class="feedback" id="feedback"></div>
     </div>
 
+    <div class="victory-screen" id="victoryScreen">
+        <div class="victory-message">
+            ¡Felicidades! 🎉<br>
+            ¡Has ganado el juego!<br>
+            ¡Eres una estrella de las matemáticas! ⭐
+        </div>
+        <button class="play-again" onclick="resetGame()">¡Jugar de nuevo!</button>
+    </div>
+
     <script>
         let score = 0;
         let currentProblem = {};
+
+        function createFirework() {
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.left = Math.random() * window.innerWidth + 'px';
+            firework.style.top = Math.random() * window.innerHeight + 'px';
+            firework.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            document.body.appendChild(firework);
+
+            firework.addEventListener('animationend', () => {
+                firework.remove();
+            });
+        }
+
+        function celebrateVictory() {
+            const victoryScreen = document.getElementById('victoryScreen');
+            victoryScreen.style.display = 'flex';
+            
+            // Crear múltiples fuegos artificiales
+            for(let i = 0; i < 20; i++) {
+                setTimeout(() => createFirework(), i * 200);
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('victoryScreen').style.display = 'none';
+            generateProblem();
+        }
 
         function createFloatingNumber() {
             const number = document.createElement('div');
@@ -220,6 +326,11 @@
                 score++;
                 feedback.textContent = '¡Correcto! 🎉';
                 feedback.className = 'feedback correct';
+                
+                if (score >= 10) {
+                    celebrateVictory();
+                    return;
+                }
             } else {
                 feedback.textContent = '¡Inténtalo de nuevo! 💪';
                 feedback.className = 'feedback incorrect';
